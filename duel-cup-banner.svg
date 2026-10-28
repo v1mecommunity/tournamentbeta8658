@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">V1ME Duel Cup — один проти одного</title><desc id="desc">Темна турнірна обкладинка з двома прицілами, тактичною сіткою та фіолетовими акцентами.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#080910"/><stop offset=".55" stop-color="#171126"/><stop offset="1" stop-color="#080a12"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#8b58d7" stop-opacity=".33"/><stop offset="1" stop-color="#8b58d7" stop-opacity="0"/></radialGradient>
+    <linearGradient id="edge"><stop stop-color="#b98aff"/><stop offset="1" stop-color="#6b71bd"/></linearGradient>
+    <pattern id="grid" width="70" height="70" patternUnits="userSpaceOnUse"><path d="M70 0H0V70" fill="none" stroke="#ba9de0" stroke-opacity=".06"/></pattern>
+    <g id="target"><circle r="115" fill="none" stroke="url(#edge)" stroke-width="2"/><circle r="87" fill="none" stroke="#b68adf" stroke-opacity=".22"/><path d="M-150 0h72m156 0h72M0-150v72m0 156v72" stroke="#c8a2f4" stroke-width="3"/><path d="M-27-27h18v-18M27-27H9v-18M-27 27h18v18M27 27H9v18" fill="none" stroke="#c8a2f4" stroke-width="2"/><circle r="4" fill="#d6b9ff"/></g>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/><rect width="1600" height="900" fill="url(#grid)"/>
+  <ellipse cx="330" cy="390" rx="550" ry="490" fill="url(#glow)"/><ellipse cx="1270" cy="500" rx="550" ry="490" fill="url(#glow)"/>
+  <g fill="none" stroke="#9f79ce" stroke-opacity=".18"><path d="M0 120h240l80 80h110m-430 40h180l80 80h175M1600 160h-235l-130 130h-90m455 95h-165l-75 75h-160M0 720h255l90-90h120m1135 145h-240l-85-85h-110"/><path d="M60 60v160l180 180v165m1300-500v120l-210 210v170"/></g>
+  <g fill="#ad84da" opacity=".5"><circle cx="430" cy="200" r="4"/><circle cx="435" cy="320" r="4"/><circle cx="1145" cy="290" r="4"/><circle cx="1170" cy="460" r="4"/><circle cx="465" cy="630" r="4"/><circle cx="1165" cy="690" r="4"/></g>
+  <use href="#target" x="320" y="455"/><use href="#target" x="1280" y="455"/>
+  <path d="M910 230 690 670" stroke="#b78ce6" stroke-opacity=".2" stroke-width="1"/>
+  <g text-anchor="middle" font-family="Arial,Helvetica,sans-serif"><text x="800" y="305" fill="#b49bcc" font-size="23" font-weight="700" letter-spacing="8">V1ME COMMUNITY</text><text x="800" y="465" fill="#f8f5fc" font-size="116" font-weight="900" letter-spacing="-5">DUEL CUP</text><text x="800" y="548" fill="#c9b0ee" font-size="42" font-weight="700" letter-spacing="9">1 × 1</text><text x="800" y="630" fill="#b2a6c1" font-size="21" letter-spacing="4">32 PLAYERS · COUNTER-STRIKE 2</text></g>
+  <path d="M570 704h460" stroke="#9270bd" stroke-opacity=".25"/>
+</svg>

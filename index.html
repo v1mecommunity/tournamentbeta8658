@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament Solutions — вебплатформи для турнірів</title>
+  <meta name="theme-color" content="#08090f">
+  <style>html,body{margin:0;min-height:100%;background:#08090f;color:#f4f3f8}#v1meBootPanel{box-sizing:border-box;max-width:560px;margin:12vh auto;padding:28px;border:1px solid #3b2c55;border-radius:14px;background:#121019;font:16px/1.65 system-ui}#v1meBootPanel h1{margin:0 0 14px;font-size:27px;line-height:1.25}#v1meBootPanel p{color:#beb5cd}#v1meBootRetry{min-height:44px;padding:9px 17px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font:600 15px system-ui;cursor:pointer}[hidden]{display:none!important}@media(max-width:600px){#v1meBootPanel{margin:9vh 18px;padding:24px}}</style>
+  <script>
+/* Standalone startup feedback, including when only index.html was extracted. */
+(() => {
+  const assets = { style: false, sdk: false, app: false };
+  let state = "site_boot_loading", failure = "", finish;
+  const ready = new Promise(resolve => { finish = resolve; });
+  const local = location.protocol === "file:";
+  function render() {
+    const panel = document.getElementById("v1meBootPanel");
+    if (!panel) return;
+    const title = document.getElementById("v1meBootTitle");
+    const text = document.getElementById("v1meBootText");
+    const retry = document.getElementById("v1meBootRetry");
+    if (state === "site_boot_error") {
+      title.textContent = failure === "sdk" ? "Не завантажився сервіс входу" : failure === "timeout" ? "Завантаження не завершилось" : "Не завантажилися файли сайту";
+      text.textContent = failure === "sdk" ? "Перевір підключення до інтернету й повтори спробу. Сайт має завантажити сервіс акаунтів перед входом." : failure === "timeout" ? "Перевір інтернет і повтори спробу. Якщо відкриваєш ZIP, спочатку розпакуй увесь архів разом із папкою site." : local ? "Не відкривай index.html прямо всередині ZIP. Натисни правою кнопкою на архів → «Видобути все…». У розпакованій папці site поруч мають бути app.js, style.css та решта файлів." : "Поруч з index.html мають лежати app.js, style.css та решта файлів папки site. Завантаж на хостинг усю папку й онови сторінку.";
+      retry.hidden = false;
+    } else {
+      title.textContent = assets.app && assets.sdk && assets.style ? "Перевіряю вхід…" : "Завантажую Tournament Solutions…";
+      text.textContent = "Для перегляду сайту потрібен акаунт із підтвердженою поштою.";
+    }
+  }
+  function fail(reason) {
+    if (state !== "site_boot_loading") return;
+    state = "site_boot_error"; failure = reason;
+    clearTimeout(timer); finish(false); render();
+  }
+  function loaded(kind) {
+    if (state !== "site_boot_loading") return;
+    assets[kind] = true;
+    if (assets.style && assets.sdk && assets.app) { clearTimeout(timer); finish(true); }
+    render();
+  }
+  function complete() { if (state !== "site_boot_error") { state = "site_boot_complete"; clearTimeout(timer); } }
+  const timer = setTimeout(() => fail("timeout"), 20000);
+  window.V1MEBoot = { ready, loaded, fail, complete, render, get state() { return state; } };
+  window.addEventListener("error", event => { if (/app\.js/.test(event.filename || "")) fail("app"); });
+  document.addEventListener("DOMContentLoaded", render, { once: true });
+})();
+
+</script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css?v=tournament-solutions-minimal" onload="V1MEBoot.loaded('style')" onerror="V1MEBoot.fail('style')">
+  <script>
+/* Shared routing for the compact static release. */
+(() => {
+  "use strict";
+  const files = Object.freeze({
+    home: "index.html",
+    tournaments: "tournaments.html",
+    tournament: "tournament.html",
+    bracket: "bracket.html",
+    matches: "matches.html",
+    match: "match.html",
+    teams: "teams.html",
+    "team-profile": "team-profile.html",
+    "player-profile": "player-profile.html",
+    rankings: "rankings.html",
+    news: "news.html",
+    reportage: "reportage.html",
+    archive: "archive.html",
+    register: "register.html",
+    login: "login.html",
+    "register-account": "register-account.html",
+    profile: "profile.html"
+  });
+  const keys = new Map(Object.entries(files).map(([key, file]) => [file, key]));
+  const directory = new URL(".", location.href);
+
+  function resolve(value) {
+    try {
+      const target = new URL(String(value || "index.html"), directory);
+      if (target.origin !== directory.origin || target.username || target.password) return null;
+      if (!target.pathname.startsWith(directory.pathname)) return null;
+      const file = target.pathname.slice(directory.pathname.length);
+      if (file === "admin.html") return { target, file, key: "admin" };
+      if (!keys.has(file)) return null;
+      if (file !== "index.html") return { target, file, key: keys.get(file) };
+      const pages = target.searchParams.getAll("page");
+      if (pages.length > 1) return null;
+      const key = pages.length ? pages[0] : "home";
+      if (!Object.prototype.hasOwnProperty.call(files, key)) return null;
+      return { target, file: files[key], key };
+    } catch { return null; }
+  }
+
+  function canonical(route) {
+    const { target, key } = route;
+    if (key === "admin") return "admin.html" + target.search + target.hash;
+    const params = new URLSearchParams(target.search);
+    params.delete("page");
+    const query = params.toString();
+    return "index.html?page=" + encodeURIComponent(key) + (query ? "&" + query : "") + target.hash;
+  }
+
+  function toUrl(value) {
+    const route = resolve(value);
+    return route ? canonical(route) : String(value || "");
+  }
+
+  function safeNext(value, fallback = "profile.html") {
+    const backup = resolve(fallback) || resolve("profile.html");
+    const route = resolve(value || fallback);
+    return canonical(route || backup);
+  }
+
+  function fileFromUrl(value) {
+    return resolve(value)?.file || "";
+  }
+
+  function currentFile() {
+    return fileFromUrl(location.href) || "index.html";
+  }
+
+  window.V1MERoute = Object.freeze({ files, currentFile, fileFromUrl, safeNext, toUrl });
+
+  // Keep links produced later by existing page renderers canonical as well.
+  function updateLink(element) {
+    const attribute = element.matches?.("a[href]") ? "href"
+      : element.matches?.("form[action]") ? "action" : "";
+    if (!attribute) return;
+    const raw = element.getAttribute(attribute);
+    if (!raw || raw.startsWith("#") || raw.startsWith("?")) return;
+    const route = resolve(raw);
+    if (!route) return;
+    const value = canonical(route);
+    if (raw !== value) element.setAttribute(attribute, value);
+  }
+
+  function updateLinks(root) {
+    if (root.nodeType === 1) updateLink(root);
+    root.querySelectorAll?.("a[href], form[action]").forEach(updateLink);
+  }
+
+  updateLinks(document);
+  new MutationObserver(records => {
+    records.forEach(record => {
+      if (record.type === "attributes") updateLink(record.target);
+      else record.addedNodes.forEach(updateLinks);
+    });
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["href", "action"] });
+  document.addEventListener("DOMContentLoaded", () => updateLinks(document), { once: true });
+})();
+
+</script>
+</head>
+<body>
+  <main id="v1meBootPanel" role="status"><h1 id="v1meBootTitle">Завантажую Tournament Solutions…</h1><p id="v1meBootText">Для перегляду сайту потрібен акаунт із підтвердженою поштою.</p><button id="v1meBootRetry" type="button" onclick="location.reload()" hidden>Повторити спробу</button></main>
+  <script>V1MEBoot.render();</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="V1MEBoot.loaded('sdk')" onerror="V1MEBoot.fail('sdk')"></script>
+  <script>
+/* Confirmed-email access gate. The compact loader waits for V1MEAccess.ready. */
+(() => {
+  "use strict";
+  const AUTH_URL = "https://rfgsmiprdmlpximyeaoy.supabase.co";
+  const AUTH_KEY = "sb_publishable_h9m8acjhlJEAETS7nJZU8g_8M29PNAS";
+  const knownPages = new Set(["home", "tournaments", "tournament", "bracket", "matches", "match", "teams", "team-profile", "player-profile", "rankings", "news", "reportage", "archive", "register", "login", "register-account", "profile"]);
+  const file = location.pathname.split("/").pop() || "index.html";
+  const requested = file === "index.html" ? (new URLSearchParams(location.search).get("page") || "home") : file.replace(/\.html$/, "");
+  const page = knownPages.has(requested) ? requested : "home";
+  const exempt = file === "admin.html" || page === "login" || page === "register-account";
+  let client = window.supabaseClient || null;
+  try { if (!client && window.supabase?.createClient) client = window.supabase.createClient(AUTH_URL, AUTH_KEY); } catch { client = null; }
+  if (client) window.supabaseClient = client;
+  let latest = { allowed: exempt, user: null, client, reason: exempt ? "account-page" : "checking" };
+  let running = null;
+  let generation = 0;
+  function startupFailed() { return window.V1MEBoot?.state === "site_boot_error"; }
+  function isVerified(user) { return !!(user?.id && user?.email && user?.email_confirmed_at); }
+  function canonical(value) {
+    try {
+      const base = new URL(".", location.href);
+      const target = new URL(value || location.href, base);
+      // Session tokens belong in the account callback hash, never inside next.
+      const authHash = new URLSearchParams(target.hash.slice(1));
+      if (["access_token", "refresh_token", "error_description"].some(key => authHash.has(key))) target.hash = "";
+      if (window.V1MERoute) return window.V1MERoute.safeNext(target.href, "index.html");
+      if (target.origin !== base.origin || target.username || target.password || !target.pathname.startsWith(base.pathname)) return "index.html";
+      const name = target.pathname.slice(base.pathname.length);
+      const key = name === "index.html" ? (target.searchParams.get("page") || "home") : name.replace(/\.html$/, "");
+      if (!knownPages.has(key)) return "index.html";
+      return name + target.search + target.hash;
+    } catch { return "index.html"; }
+  }
+  function loginUrl(next = location.href, reason = "") {
+    const base = window.V1MERoute ? window.V1MERoute.toUrl("login.html") : "login.html";
+    return base + (base.includes("?") ? "&" : "?") + "next=" + encodeURIComponent(canonical(next)) + (reason === "unconfirmed" ? "&confirm=1" : "");
+  }
+  function ensureStyle() {
+    if (document.getElementById("v1meAccessStyle")) return;
+    const style = document.createElement("style"); style.id = "v1meAccessStyle";
+    style.textContent = 'html[data-v1me-access="pending"] body>*:not(#v1meAccessPanel):not(#v1meBootPanel),html[data-v1me-access="denied"] body>*:not(#v1meAccessPanel):not(#v1meBootPanel){display:none!important}#v1meAccessPanel{box-sizing:border-box;max-width:540px;margin:12vh auto;padding:30px;border:1px solid #3b2c55;border-radius:14px;background:#121019;color:#f4f0fa;font:16px/1.6 system-ui}#v1meAccessPanel h1{font-size:27px;line-height:1.2;margin:0 0 14px}#v1meAccessPanel p{color:#beb5cd}#v1meAccessPanel .access-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}#v1meAccessPanel button,#v1meAccessPanel a{display:inline-flex;align-items:center;min-height:44px;padding:8px 17px;border:1px solid #7950b7;border-radius:7px;background:#7c3aed;color:#fff;font:600 15px system-ui;text-decoration:none;cursor:pointer}#v1meAccessPanel a{background:transparent}#v1meAccessPanel button:disabled{opacity:.6;cursor:wait}@media(max-width:600px){#v1meAccessPanel{margin:9vh 18px;padding:24px}}';
+    (document.head || document.documentElement).append(style);
+  }
+  function hideProtectedContent() {
+    if (exempt) return;
+    ensureStyle();
+    document.documentElement.setAttribute("data-v1me-access", "pending");
+  }
+  function unlock() {
+    document.documentElement.setAttribute("data-v1me-access", "granted");
+    document.getElementById("v1meAccessPanel")?.remove();
+  }
+  function renderFailure() {
+    if (exempt) return;
+    ensureStyle(); document.documentElement.setAttribute("data-v1me-access", "denied");
+    const bootPanel = document.getElementById("v1meBootPanel");
+    if (bootPanel) bootPanel.hidden = true;
+    const render = () => {
+      if (latest.allowed || !document.body) return;
+      let panel = document.getElementById("v1meAccessPanel");
+      if (!panel) { panel = document.createElement("main"); panel.id = "v1meAccessPanel"; document.body.append(panel); }
+      panel.replaceChildren();
+      const heading = document.createElement("h1"); heading.textContent = "Не вдалося перевірити вхід";
+      const description = document.createElement("p"); description.textContent = "Перевір інтернет і повтори спробу. Для перегляду сайту потрібен акаунт із підтвердженою поштою.";
+      const actions = document.createElement("div"); actions.className = "access-actions";
+      const retry = document.createElement("button"); retry.type = "button"; retry.textContent = "Спробувати ще раз";
+      retry.addEventListener("click", async () => { retry.disabled = true; if (!client) { location.reload(); return; } const result = await check(); if (result.allowed) location.reload(); else retry.disabled = false; });
+      const login = document.createElement("a"); login.href = loginUrl(); login.textContent = "Перейти до входу";
+      actions.append(retry, login); panel.append(heading, description, actions);
+    };
+    if (document.body) render(); else document.addEventListener("DOMContentLoaded", render, { once: true });
+  }
+  function withTimeout(promise) {
+    let timer;
+    return Promise.race([Promise.resolve(promise), new Promise((_, reject) => { timer = setTimeout(() => reject(new Error("Access verification timed out")), 12000); })]).finally(() => clearTimeout(timer));
+  }
+  async function verify() {
+    if (window.V1MEBoot && (!await window.V1MEBoot.ready || startupFailed())) {
+      latest = { allowed: false, user: null, client, reason: "assets" };
+      return latest;
+    }
+    if (exempt) return latest;
+    const authHash = new URLSearchParams(location.hash.slice(1));
+    if (authHash.get("type") === "recovery") {
+      const callbackHash = location.hash;
+      const target = loginUrl(location.href) + "&reset=1" + callbackHash;
+      latest = { allowed: false, user: null, client, reason: "recovery" };
+      hideProtectedContent();
+      location.replace(target);
+      return latest;
+    }
+    const sequence = ++generation;
+    hideProtectedContent();
+    try {
+      if (!client?.auth?.getUser) throw new Error("AUTH_UNAVAILABLE");
+      const { data, error } = await withTimeout(client.auth.getUser());
+      if (sequence !== generation) return latest;
+      if (startupFailed()) {
+        latest = { allowed: false, user: null, client, reason: "assets" };
+        return latest;
+      }
+      if (error && ![401, 403].includes(Number(error.status)) && error.name !== "AuthSessionMissingError" && !/session missing|invalid.*token|jwt expired|refresh token not found/i.test(error.message || "")) throw error;
+      const user = error ? null : data?.user || null;
+      const allowed = isVerified(user);
+      const reason = allowed ? "verified" : user ? "unconfirmed" : "anonymous";
+      latest = { allowed, user, client, reason };
+      if (allowed) unlock();
+      else { hideProtectedContent(); location.replace(loginUrl(location.href, reason)); }
+      return latest;
+    } catch (error) {
+      if (startupFailed()) {
+        latest = { allowed: false, user: null, client, reason: "assets" };
+        return latest;
+      }
+      latest = { allowed: false, user: null, client, reason: "unavailable" };
+      renderFailure();
+      return latest;
+    }
+  }
+  function check() {
+    if (!running) running = verify().finally(() => { running = null; });
+    return running;
+  }
+  window.V1MEAccess = { get current() { return latest; }, isVerified, loginUrl, hideProtectedContent, check, ready: null };
+  if (!exempt) hideProtectedContent();
+  if (!exempt) client?.auth?.onAuthStateChange?.((event) => {
+    if (event !== "SIGNED_OUT") return;
+    ++generation;
+    latest = { allowed: false, user: null, client, reason: "anonymous" };
+    hideProtectedContent();
+    Promise.resolve(window.V1MEBoot?.ready ?? true).then(ready => {
+      if (ready && !startupFailed()) location.replace(loginUrl());
+    });
+  });
+  window.V1MEAccess.ready = check();
+})();
+
+</script>
+  <script src="app.js?v=tournament-solutions-minimal" onerror="V1MEBoot.fail('app')"></script>
+  <noscript><style>#v1meBootPanel{display:none!important}</style><main style="max-width:640px;margin:10vh auto;padding:24px;font:18px/1.6 system-ui"><h1>Tournament Solutions</h1><p>Увімкни JavaScript, щоб переглядати турніри, матчі та свій акаунт.</p><a href="https://discord.gg/7t8vAnn3n">Спільнота в Discord</a></main></noscript>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tournament Solutions — Перехід</title></head>
+<body style="margin:0;background:#111215;color:#f3f2ed;font:16px/1.6 system-ui">
+<main style="max-width:560px;margin:15vh auto;padding:24px"><h1>Tournament Solutions</h1><p>Ця адреса змінилася.</p><a id="homeLink" style="color:#dcc653" href="index.html">На головну →</a></main>
+<script>
+(() => {
+  const routes = {"index.html":"home","tournaments.html":"tournaments","tournament.html":"tournament","bracket.html":"bracket","matches.html":"matches","match.html":"match","teams.html":"teams","team-profile.html":"team-profile","player-profile.html":"player-profile","rankings.html":"rankings","news.html":"news","reportage.html":"reportage","archive.html":"archive","register.html":"register","login.html":"login","register-account.html":"register-account","profile.html":"profile","tournament2).html":"tournament"};
+  const name = decodeURIComponent(location.pathname.split("/").pop() || "");
+  if (!Object.prototype.hasOwnProperty.call(routes, name)) return;
+  const target = new URL("index.html", location.href);
+  const params = new URLSearchParams(location.search);
+  params.delete("page");
+  target.searchParams.set("page", routes[name]);
+  params.forEach((value, key) => target.searchParams.append(key, value));
+  target.hash = location.hash;
+  location.replace(target.href);
+})();
+</script>
+</body></html>
